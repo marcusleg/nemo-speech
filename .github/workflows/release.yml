@@ -1,0 +1,76 @@
+name: Release
+
+# Pushing a tag such as v0.3.0 builds the image, smoke-tests it and publishes
+# it to GHCR. The tag must name the NeMo-Speech.cpp version in the
+# Containerfile; a rebuild of the same version (a new model or base image)
+# adds a suffix, such as v0.3.0-2.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the tag matches the Containerfile
+        run: |
+          version=$(sed -n 's/^ARG NEMO_SPEECH_VERSION=//p' Containerfile)
+          case "$GITHUB_REF_NAME" in
+            "v$version" | "v$version"-*) ;;
+            *)
+              echo "::error::tag $GITHUB_REF_NAME doesn't match NEMO_SPEECH_VERSION $version"
+              exit 1
+              ;;
+          esac
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build the image for the smoke test
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Containerfile
+          platforms: linux/amd64
+          load: true
+          tags: nemo-speech:smoke-test
+          cache-from: type=gha,scope=release
+          cache-to: type=gha,mode=max,scope=release
+
+      - name: Smoke-test the image
+        run: scripts/smoke-test-image.sh nemo-speech:smoke-test
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}}
+
+      - name: Push the image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Containerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=release
