@@ -35,7 +35,7 @@ jobs:
               ;;
           esac
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@v4
 
       - name: Build the image for the smoke test
         uses: docker/build-push-action@v6
