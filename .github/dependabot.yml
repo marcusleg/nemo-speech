@@ -1,0 +1,12 @@
+version: 2
+updates:
+  # The Debian base image digest in the Containerfile. NEMO_SPEECH_VERSION and
+  # the model pins are plain ARGs that Dependabot does not track.
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
