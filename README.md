@@ -27,6 +27,9 @@ that language, so a client that always sends one loses detection.
 | `nemotron-3.5-asr-streaming-0.6b.q8_0.gguf` | `MODEL_REVISION` (Hugging Face commit) and `MODEL_SHA256` |
 | Debian trixie-slim | digest |
 
+Dependabot keeps the base image digest and the workflow actions current. It does not track
+`NEMO_SPEECH_VERSION` or the model pins; bump those by hand.
+
 ## Releasing
 
 Push a tag that names the `NEMO_SPEECH_VERSION` in the `Containerfile`, such as `v0.3.0`.
